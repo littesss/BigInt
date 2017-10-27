@@ -1,0 +1,120 @@
+
+【版权声明：尊重原创，转载请保留出处：blog.csdn.net/shallnet，文章仅供学习交流，请勿用于商业用途】
+        并非所有的网站页面静态的，大多数时候我们需要浏览器和服务器进行一个交互，比如在我们按下了页面的提交按钮后，表单数据被发送给了服务器，这个时候服务器端需要一个程序对表单数据进行处理，比如在登陆界面输入用户名和密码后按登录按钮时。这个时候就需要web客户端和服务器进行交互了，而此时CGI就很重要了。
+        CGI是一个web服务器主机提供信息服务的标准接口，全称是通用网关接口（Common Gateway Interface），通过CGI，web服务器就能获取web客户端提交的信息，转交给服务器端的CGI程序进行处理，最后再将处理结果返回给web客户端。
+        下图展示了web客户端，web服务器和CGI三者之间是如何通信的。
+        web客户端和web服务器的通信就是客户端的浏览器和服务器上的HTTP服务器程序之间的http协议通信。web浏览客户端提交的数据是一般是提交给服务端的某个CGI程序，那么数据是如何到达CGI程序的呢？客户端将数据通过http协议传输给web服务器之后，web服务器通过环境变量和标准输入输出将数据传递给CGI程序。环境变量在CGI中有着重要的地位，每个CGI程序只能处理一个用户请求，在激活一个CGI程序进程时也创建了属于该进程的环境变量。CGI程序一般由HTTP服务器启动，每当服务器接收到一个客户端请求时，服务器就会启动一个相应CGI进程，并且该进程环境变量中会增加关于HTTP服务器、客户端发送的数据等的项目。
+与服务器相关的环境变量：
+        GATEWAY_INTERFACE:             CGI版本
+        SERVER_NAME                          服务器的IP或主机名
+        SERVER_PORT                           接受HTTP的端口号
+        SERVER_PROTOCOL                 协议名及版本
+        SERVER_SOFTWARE                 服务器软件的名字
+与客户端相关的环境变量：
+        ACCEPT                           列出客户机所支持的MIME类型清单
+        REFERER                         超链接中当前文档的前一文档
+        USER_AGENT                  浏览器的有关信息
+        ACCEPT_ENCODING      客户端支持的编码方式类别
+        IF_MODIFIED_SINCE      当用GET请求并且只有当文档比指定日期更早时才返回数据
+        AUTHORIZATION          标明被证实了的用户
+        FROM                             列出客户机的E-mail地址 
+与请求相关的环境变量：
+        REQUEST_METHOD 服务器与CGI之间信息传输方式
+        QUERY_STRING 所传信息
+        CONTENT_LENGTH 有效数据的字节数
+        CONTENT_TYPE 所传信息的MIME类型
+
+其中与请求关相关环境变量在编程时使用最多。
+        REQUEST_METHOD：一般为两种:POST和GET，也有其他情况，但比较少见。如果请求方法为GET，服务器把从标 准输入接收到得数据编码到环境变量QUERY_STRING中。如果请求方法为POST，那么服务器将客户端发来的用户数据将存放在CGI进程的标准输入中，同时将用户数据的长度赋予环境变量中的CONTENT_LENGTH。简单地说，使用GET方法要获得请求数据需要读环境变量QUERY_STRING，使用POST方法则根据环境变量CONTENT_LENGTH的大小去从标准输入去读取。
+下面我们来编写一个简单CGI程序，仅仅输出客户端请求数据以及其它一些环境变量。CGI程序可以用任何支持标准输入输出程序设计语言编写，如Shell脚本语言、Perl、Fortran、Pascal、C语言等，但是用C语言编写的CGI程序具有执行速度快、安全性高（因为C语言程序是编译执行且不可被修改）等特点。本系列文章将以C语言来进行web后台开发，服务器将使用Apache服务器，如果是在嵌入式下的web开发可以使用boa服务器，关于服务器的安装配置可以查阅相关文章。
+下面是html文件：
+[html] view plain copy
+
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"  
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">  
+    <html>  
+        <head>  
+            <meta http-equiv="content-type" content="text/html; charset=utf-8">  
+      
+            <title>just print</title>  
+        </head>  
+        <body>  
+            <p> input text: </p>  
+            <form action="/cgi-bin/print.cgi">  
+                <!--<form action="/cgi-bin/test.cgi" method="post">-->  
+                    username:   
+                    <input type="text" name="username"/> <br />  
+                    password:  
+                    <input type="password" name="passwd" /> <br />  
+                    <input type="radio" name="language" value="English"/> English <br />  
+                    <input type="radio" name="language" value="Chinese"/> Chinese  
+                    <input type="hidden" name="sessionid" value="1234567890"/> <br />  
+                    <input type="submit" value="ok"> <br />  
+                </form>  
+        </body>  
+    </html>  
+
+
+下面为处理该表单的CGI程序：
+[cpp] view plain copy
+
+    #include <stdio.h>  
+    #include <stdlib.h>  
+    int main(int argc, const char *argv[])  
+    {  
+        char     *data = NULL;  
+        fprintf(stdout, "Content-Type: text/html\r\n\r\n");  
+        data = getenv("REQUEST_METHOD");    //数据提交方式，本例为get  
+        if (NULL == data) {  
+            data = "";  
+        }  
+        printf("REQUEST_METHOD: %s\n", data);  
+        data = getenv("QUERY_STRING");    //当使用get时，提交数据都在该环境变量里头  
+        if (NULL == data) {  
+            data = "";  
+        }  
+        printf("QUERY_STRING: %s\n", data);  
+        data = getenv("CONTENT_LENGTH");    //提交数据长度，当使用POST方式时有效，使用GET时，该环境变量为空。  
+        if (NULL == data) {  
+            data = "";  
+        }  
+        printf("CONTENT_LENGTH: %s\n", data);  
+        data = getenv("CONTENT_TYPE");  
+        if (NULL == data) {  
+            data = "";  
+        }  
+        printf("REQUEST_TYPE: %s\n", data);  
+        data = getenv("USER_AGENT");  
+        if (NULL == data) {  
+            data = "";  
+        }  
+        printf("USER_AGENT: %s\n", data);  
+        data = getenv("SERVER_NAME");  
+        if (NULL == data) {  
+            data = "";  
+        }  
+        printf("SERVER_NAME: %s\n", data);  
+        data = getenv("SERVER_PORT");  
+        if (NULL == data) {  
+            data = "";  
+        }  
+        printf("SERVER_PORT: %s\n", data);  
+        data = getenv("SERVER_PROTOCOL");  
+        if (NULL == data) {  
+            data = "";  
+        }  
+        printf("SERVER_PROTOCOL: %s\n", data);  
+        data = getenv("SERVER_SOFTWARE");  
+        if (NULL == data) {  
+            data = "";  
+        }  
+        printf("REQUEST_SOFTWARE: %s\n", data);  
+        return 0;  
+    }  
+
+该程序的标准输出不会输出到控制台去，而是输出给http服务器。该程序编译后，将可执行文件改为print.cgi放在/cgi-bin/目录下，就可以在浏览器中访问并提交数据到该CGI程序了。下面是我的环境中的输入与输出显示：
+当我点击ok按钮后，服务器返回数据，也就是将我们需要输出的环境变量全部输出到屏幕上：
+此时我的地址栏数据为：
+http://shallnet.cn/cgi-bin/print.cgi?username=shallnet&passwd=cn&language=Chinese&sessionid=1234567890
+这一节的内容主要是让读者了解CGI和服务器的通信是通过标准输入输出和环境变量相关知识，了解CGI程序如何编写和运行起来，在后面的章节中我们将会看到在编写CGI程序时如何解析其中的数据，尤其当采用不同的数据提交方式时。
+

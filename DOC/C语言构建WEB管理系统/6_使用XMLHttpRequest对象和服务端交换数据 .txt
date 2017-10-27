@@ -1,0 +1,68 @@
+【版权声明：尊重原创，转载请保留出处：blog.csdn.NET/shallnet，文章仅供学习交流，请勿用于商业用途】      
+
+以登录页面为例，当我们提交登录页面表单时，将登录用户名和登录密码发送到服务器，这个时候我们肯定希望服务器可以返回提交的用户名和密码是否正确的信息。如果错误给出提示信息以便重新输入，正确则页面给出提示或跳转到指定页面。这是就需要前端和服务器端可以同步或异步进行通信。
+
+1. 创建XMLHttpRequest 对象
+        通过创建XMLHttpRequest 对象可以实现页面前端和服务器交换数据， 并且在已加载页面情况下向服务器请求和接受数据。使用如下方法创建XMLHttpRequest：
+[javascript] view plain copy
+
+    if (window.XMLHttpRequest)  
+    {// code for IE7+, Firefox, Chrome, Opera, Safari  
+        xmlhttp=new XMLHttpRequest();  
+    }  
+    else  
+    {// code for IE6, IE5  
+        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");  
+    }   
+
+为了处理所有现代的浏览器，包括 IE5 和 IE6，请检查浏览器是否 支持 XMLHttpRequest 对象。如果支持，则创建一个 XMLHttpRequest 对象，如果不支持，则创建一个 ActiveX 对象。
+
+
+2. 发送请求道服务器
+
+        为了发送一个请求到服务器，我们使用 XMLHttpRequest 对象的 open() 和 send() 方法：
+[javascript] view plain copy
+
+    xmlhttp.open("GET","xxx.txt",true);  
+    xmlhttp.send();  
+
+open方法原型为：
+[javascript] view plain copy
+
+    open(method,url,async)；<span style="font-family:'Open Sans', 'Helvetica Neue', Helvetica, Arial, STHeiti, 'Microsoft Yahei', sans-serif;color:#333333;background-color:#FFFFFF;font-style:normal;text-align:start;"></span>  
+
+该方法规定请求类型，URL，请求是或否异步处理。
+method：请求的类型：GET 或 POST
+url：文件在服务器上的位置
+async：true（异步）或 false（同步）。
+
+send方法原型为：
+[javascript] view plain copy
+
+    send(string)；  
+
+该方法发送请求道服务器，参数string仅用于 POST 请求。
+
+3. 为响应服务器准备执行函数
+        当请求发送到服务器后，我们需要根据服务器响应执行某些动作。这时可以使用 async=true，此时需要给onreadystatechange事件规定一个执行函数。 
+当使用 async=true 时，需要给xmlHttp成员onreadystatechange事件赋予执行动作，onreadystatechange 事件在每次 readyState 变化时被触发，在每次 readyState 属性变化时被自动调用。在 onreadystatechange 事件中，我们规定当服务器的响应准备处理时会发生什么。xmlHttp中readyState存放了 XMLHttpRequest 的状态。从 0 到 4 变化：0：请求未初始化
+1：服务器建立连接
+2：收到的请求
+3：处理请求
+4：请求完成和响应准备就绪
+xmlHttp还有一个重要的属性是status，200为"OK" 404为找不到页面。
+所以，onreadystatechange 事件在每次 readyState 发生变化时被触发，总共触发了四次。
+一般我们在当 readyState 是 4 或状态是 status是200 时，执行响应动作。如下：
+[javascript] view plain copy
+
+    function xxx_ready {  
+        if (xmlhttp.readyState==4 && xmlhttp.status==200)  
+        {  
+            //do somthing;  
+        }  
+    }  
+
+从服务器获取响应数据，需要使用 XMLHttpRequest 对象的 responseText 或 responseXML 属性，如：
+[javascript] view plain copy
+
+    document.getElementById("myDiv").innerHTML=xmlhttp.responseText;  

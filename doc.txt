@@ -1,0 +1,19 @@
+1、BigInt
+   a> 实现Add  Sub  Mul  Div  Mod  Pow  PowMod  >>  <<  >>= <<=
+   b>      +    -    *    /    %    %    
+   c> 支持 正数、负数的运算
+   d> 256进制存储
+
+2、http服务器  
+   a> 选择tinyhttpd作为web
+   b> 改写httpd  I/O
+   c> 改写httpd  支持图片的传输
+
+3、CGI
+   B/S
+
+4、mysql
+   a> 安装
+   b> 如何操作
+   c> 数据库api
+   d> 编译

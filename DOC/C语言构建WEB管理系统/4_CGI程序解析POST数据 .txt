@@ -1,0 +1,68 @@
+
+
+【版权声明：尊重原创，转载请保留出处：blog.csdn.NET/shallnet，文章仅供学习交流，请勿用于商业用途】
+
+这一节我们将介绍如何解析POST方式提交的表单数据，在前面说过POST提交的数据没有放在QUERY_STRING环境变量中，我们将上一节的示例表单直接改为POST方式如下：
+[html] view plain copy
+
+    <body>  
+        <p> 登录信息: </p>  
+        <!--<form action="/cgi-bin/print.cgi">-->  
+        <form action="/cgi-bin/print.cgi" method="post">  
+            用户名:  
+            <input type="text" name="用户名"/> <br />  
+            密码:  
+            <input type="password" name="密码" /> <br />  
+            <input type="radio" name="语言" value="English"/> English <br />  
+            <input type="radio" name="语言" value="Chinese"/> 简体中文  
+            <input type="hidden" name="sessionid" value="1234567890"/> <br />  
+            <input type="submit" value="登录"> <br />  
+        </form>  
+    </body>  
+
+
+再运行可以看到点击”登录“之后，页面显示如下：
+意料之内，没有获取到任何信息，因为提交数据没有在环境变量QUERY_STRING中。事实上用户提交的数据存放在CGI进程的标准输入中，而同时数据的长度赋予环境变量中的CONTENT_LENGTH。使用wireshark抓包也可以看到表单提交的数据所处位置：
+所以要获取POST方式提交的数据，需要首先从环境变量CONTENT_LENGTH中获取数据长度，然后再从标准输入中去读该长度个字节，最后再按照上一节解析GET方式数据一样去解析数据。下面为获取POST数据集解析数据代码： 
+[cpp] view plain copy
+
+    int main(int argc, const char *argv[])  
+    {  
+        char     *data = NULL, *data_len_str = NULL;  
+        int      data_len, read_len;  
+        fprintf(stdout, "Content-Type: text/html\r\n\r\n");  
+        data_len_str = getenv("CONTENT_LENGTH");  
+        if (NULL == data_len_str) {  
+            data_len_str = "";  
+        }  
+        data_len = atoi(data_len_str);  
+        if (data_len < 0) {  
+           return -1;  
+        }  
+        data = (char *)malloc(data_len);  
+        if (NULL == data) {  
+            return -1;  
+        }  
+        read_len = fread(data, 1, data_len, stdin);  
+        if (read_len != data_len) {  
+            return -1;  
+        }  
+        fprintf(stdout, "<HTML>\n");  
+        fprintf(stdout, "<HEAD>\n");  
+        fprintf(stdout, "<TITLE>CGI解析POST数据</TITLE>\n");  
+        fprintf(stdout, "<HEAD>\n");  
+        fprintf(stdout, "<BODY>\n");  
+        fprintf(stdout, "<H3>以下为解析后数据</H3>\n");  
+        sln_cgi_content_parse(data, data_len);  
+        fprintf(stdout, "本网页由CGI自动生成!\n");  
+        fprintf(stdout, "</BODY>");  
+        fprintf(stdout, "</HTML>");  
+        free(data);  
+        return 0;  
+    }  
+
+
+
+将编译后的程序放在/cgi-bin/目录下，在页面填好数据按”提交“按钮页面显示如下：
+说明POST数据已经解析成功！
+
